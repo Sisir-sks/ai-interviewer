@@ -1,10 +1,8 @@
-import google.generativeai as genai
+from google import genai
 from app.core.config import GEMINI_API_KEY
+import re
 
-genai.configure(api_key=GEMINI_API_KEY)
-
-model = genai.GenerativeModel("gemini-1.5-flash")
-
+client = genai.Client(api_key=GEMINI_API_KEY)
 
 def evaluate_answer(answer: str):
     try:
@@ -22,20 +20,14 @@ def evaluate_answer(answer: str):
         Return ONLY a number between 1 and 10.
         """
 
-        response = model.generate_content(prompt)
+        response = client.models.generate_content(
+            model="gemini-1.5-flash",
+            contents=prompt
+        )
 
-        # ✅ SAFE EXTRACTION
-        if response:
-            text = ""
-
-            # Some Gemini responses store text differently
-            if hasattr(response, "text") and response.text:
-                text = response.text.strip()
-            elif hasattr(response, "candidates"):
-                text = str(response.candidates)
-
+        if response and response.text:
+            text = response.text.strip()
             # Extract number
-            import re
             match = re.search(r"\d+", text)
 
             if match:
