@@ -8,30 +8,24 @@ from app.core.security import create_access_token
 
 router = APIRouter()
 
-
 class UserAuth(BaseModel):
     username: str
     password: str
 
 
-# 📝 REGISTER
 @router.post("/register")
 def register(data: UserAuth, db: Session = Depends(get_db)):
     existing_user = crud.get_user_by_username(db, data.username)
-
     if existing_user:
         raise HTTPException(status_code=400, detail="User already exists")
 
     crud.create_user(db, data.username, data.password)
-
     return {"message": "User registered successfully"}
 
 
-# 🔐 LOGIN
 @router.post("/login")
 def login(data: UserAuth, db: Session = Depends(get_db)):
     user = crud.authenticate_user(db, data.username, data.password)
-
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
