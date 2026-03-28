@@ -5,28 +5,25 @@ import os
 
 app = FastAPI(title="AI Interviewer API", version="0.1.0")
 
-# ✅ Allow ALL vercel previews + production
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # temporary fix
-    allow_credentials=False,  # must be False when using "*"
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+@app.middleware("http")
+async def cors_middleware(request: Request, call_next):
+    if request.method == "OPTIONS":
+        return JSONResponse(
+            content={},
+            status_code=200,
+            headers={
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+                "Access-Control-Allow-Headers": "*",
+                "Access-Control-Max-Age": "86400",
+            }
+        )
+    response = await call_next(request)
+    response.headers["Access-Control-Allow-Origin"] = "*"
+    response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS"
+    response.headers["Access-Control-Allow-Headers"] = "*"
+    return response
 
-# ✅ Handle OPTIONS preflight manually
-@app.options("/{full_path:path}")
-async def preflight_handler(full_path: str, request: Request):
-    return JSONResponse(
-        content={},
-        headers={
-            "Access-Control-Allow-Origin": "*",
-            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
-            "Access-Control-Allow-Headers": "*",
-        }
-    )
-
-# ✅ Import router
 from app.api.routes.interview import router as interview_router
 from app.db.database import Base, engine
 from app.models.user import User
