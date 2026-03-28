@@ -1,2 +1,2 @@
-from . import auth
-from . import interview
+from .routes import auth
+from .routes import interview
