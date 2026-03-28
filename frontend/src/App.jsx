@@ -4,7 +4,8 @@ import StatusSidebar from './components/StatusSidebar';
 import FinalResultsScreen from './components/FinalResultsScreen';
 import UploadScreen from './components/UploadScreen';
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+// 🔥 API URL
+const API_URL = import.meta.env.VITE_API_URL;
 
 function App() {
 
@@ -14,7 +15,6 @@ function App() {
   const [chatHistory, setChatHistory] = useState([]);
   const [difficulty, setDifficulty] = useState('EASY');
 
-  // 🔥 SESSION ID
   const [sessionId] = useState(() => Date.now().toString());
 
   const chatRef = useRef();
@@ -22,6 +22,11 @@ function App() {
   useEffect(() => {
     chatRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatHistory]);
+
+  // 🔥 DEBUG (IMPORTANT)
+  useEffect(() => {
+    console.log("🌐 API URL:", API_URL);
+  }, []);
 
   // 🏁 FINAL SCREEN
   if (isFinished) {
@@ -39,22 +44,22 @@ function App() {
 
       const res = await fetch(`${API_URL}/interview/start`, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           resume_text: data?.resumeText || 'sample resume',
           session_id: sessionId
         })
       });
 
-      const responseData = await res.json();
-      console.log("📥 START RESPONSE:", responseData);
-
       if (!res.ok) {
-        alert(responseData.detail || "Backend error");
+        const errText = await res.text();
+        console.error("❌ Backend error:", errText);
+        alert("Backend error");
         return;
       }
+
+      const responseData = await res.json();
+      console.log("📥 START RESPONSE:", responseData);
 
       if (responseData?.question) {
         speak(responseData.question);
@@ -63,13 +68,13 @@ function App() {
           { role: 'ai', content: responseData.question }
         ]);
 
-        setView('interview'); // 🔥 THIS SHOWS INTERVIEW PANEL
+        setView('interview');
       } else {
-        alert("No question received from backend");
+        alert("No question received");
       }
 
     } catch (err) {
-      console.error("❌ ERROR:", err);
+      console.error("❌ NETWORK ERROR:", err);
       alert("Server not reachable");
     }
 
@@ -91,22 +96,22 @@ function App() {
     try {
       const res = await fetch(`${API_URL}/interview/answer`, {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           answer: text,
           session_id: sessionId
         })
       });
 
-      const responseData = await res.json();
-      console.log("📥 ANSWER RESPONSE:", responseData);
-
       if (!res.ok) {
-        alert(responseData.detail || "Error processing answer");
+        const errText = await res.text();
+        console.error("❌ Backend error:", errText);
+        alert("Error processing answer");
         return;
       }
+
+      const responseData = await res.json();
+      console.log("📥 ANSWER RESPONSE:", responseData);
 
       if (responseData?.next_question) {
         speak(responseData.next_question);
@@ -124,7 +129,7 @@ function App() {
       setDifficulty(responseData?.difficulty?.toUpperCase() || "MEDIUM");
 
     } catch (err) {
-      console.error("❌ ERROR:", err);
+      console.error("❌ NETWORK ERROR:", err);
       alert("Server error");
     }
 
