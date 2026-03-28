@@ -14,7 +14,7 @@ function App() {
   const [chatHistory, setChatHistory] = useState([]);
   const [difficulty, setDifficulty] = useState('EASY');
 
-  // 🔥 SESSION ID (IMPORTANT)
+  // 🔥 SESSION ID
   const [sessionId] = useState(() => Date.now().toString());
 
   const chatRef = useRef();
@@ -23,7 +23,7 @@ function App() {
     chatRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatHistory]);
 
-  // 🏁 FINAL
+  // 🏁 FINAL SCREEN
   if (isFinished) {
     return <FinalResultsScreen onRestart={() => window.location.reload()} />;
   }
@@ -34,6 +34,9 @@ function App() {
     setChatHistory([]);
 
     try {
+      console.log("🚀 Starting Interview...");
+      console.log("Session ID:", sessionId);
+
       const res = await fetch(`${API_URL}/interview/start`, {
         method: 'POST',
         headers: { 
@@ -41,11 +44,17 @@ function App() {
         },
         body: JSON.stringify({
           resume_text: data?.resumeText || 'sample resume',
-          session_id: sessionId   // 🔥 added
+          session_id: sessionId
         })
       });
 
       const responseData = await res.json();
+      console.log("📥 START RESPONSE:", responseData);
+
+      if (!res.ok) {
+        alert(responseData.detail || "Backend error");
+        return;
+      }
 
       if (responseData?.question) {
         speak(responseData.question);
@@ -54,11 +63,14 @@ function App() {
           { role: 'ai', content: responseData.question }
         ]);
 
-        setView('interview');
+        setView('interview'); // 🔥 THIS SHOWS INTERVIEW PANEL
+      } else {
+        alert("No question received from backend");
       }
 
     } catch (err) {
-      console.error(err);
+      console.error("❌ ERROR:", err);
+      alert("Server not reachable");
     }
 
     setIsLoading(false);
@@ -84,11 +96,17 @@ function App() {
         },
         body: JSON.stringify({
           answer: text,
-          session_id: sessionId   // 🔥 added
+          session_id: sessionId
         })
       });
 
       const responseData = await res.json();
+      console.log("📥 ANSWER RESPONSE:", responseData);
+
+      if (!res.ok) {
+        alert(responseData.detail || "Error processing answer");
+        return;
+      }
 
       if (responseData?.next_question) {
         speak(responseData.next_question);
@@ -106,13 +124,14 @@ function App() {
       setDifficulty(responseData?.difficulty?.toUpperCase() || "MEDIUM");
 
     } catch (err) {
-      console.error(err);
+      console.error("❌ ERROR:", err);
+      alert("Server error");
     }
 
     setIsLoading(false);
   }
 
-  // 🔊 VOICE
+  // 🔊 TEXT TO SPEECH
   function speak(text) {
     window.speechSynthesis.cancel();
     const utterance = new SpeechSynthesisUtterance(text);
@@ -147,7 +166,7 @@ function App() {
     );
   }
 
-  // 🎯 MAIN UI
+  // 🎯 MAIN INTERVIEW UI
   return (
     <div className="flex flex-row h-screen w-full bg-gradient-to-br from-black via-slate-900 to-black">
 
@@ -171,28 +190,21 @@ function App() {
 
         {/* CHAT */}
         <div className="flex-1 overflow-auto p-6 space-y-4">
-
           {chatHistory.map((msg, i) => (
             <div
               key={i}
               className={`p-4 rounded-2xl max-w-[65%] shadow-lg ${
                 msg.role === 'user'
-                  ? 'ml-auto bg-gradient-to-r from-green-500/20 to-green-400/10 border border-green-400/20'
-                  : 'mr-auto bg-gradient-to-r from-blue-500/10 to-purple-500/10 border border-white/10'
+                  ? 'ml-auto bg-green-500/20 border border-green-400/20'
+                  : 'mr-auto bg-blue-500/10 border border-white/10'
               }`}
             >
               <div className="text-xs text-gray-400 mb-1">
-                {msg.role === 'ai' ? "🤖 AI Interviewer" : "🧑 You"}
+                {msg.role === 'ai' ? "🤖 AI" : "🧑 You"}
               </div>
 
               <div className="text-sm">
-                {msg.loading ? (
-                  <div className="flex gap-1">
-                    <span className="animate-bounce">•</span>
-                    <span className="animate-bounce delay-100">•</span>
-                    <span className="animate-bounce delay-200">•</span>
-                  </div>
-                ) : msg.content}
+                {msg.loading ? "Typing..." : msg.content}
               </div>
             </div>
           ))}
