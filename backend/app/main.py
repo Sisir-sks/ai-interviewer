@@ -9,6 +9,7 @@ app = FastAPI(title="AI Interviewer API", version="0.1.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
+        "https://ai-interviewer-ten-alpha.vercel.app",  # ✅ new URL
         "https://ai-interviewer-oz7s4ykns-sisirkumar413-5323s-projects.vercel.app",
         "http://localhost:3000",
         "http://localhost:5173",
