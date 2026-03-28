@@ -5,10 +5,14 @@ import os
 # ✅ Create app
 app = FastAPI(title="AI Interviewer API", version="0.1.0")
 
-# ✅ CORS (you can restrict later)
+# ✅ CORS - Fixed (allow_credentials=True is incompatible with allow_origins=["*"])
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "https://ai-interviewer-oz7s4ykns-sisirkumar413-5323s-projects.vercel.app",
+        "http://localhost:3000",
+        "http://localhost:5173",  # Vite default port
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -21,27 +25,23 @@ from app.api.routes.interview import router as interview_router
 from app.db.database import Base, engine
 from app.models.user import User  # optional
 
-# ✅ Startup event (better than calling directly)
+# ✅ Startup event
 @app.on_event("startup")
 def startup():
     print("📦 Creating database tables...")
     Base.metadata.create_all(bind=engine)
     print("✅ Tables created!")
 
-
 # ✅ Routes
 app.include_router(interview_router, prefix="/interview")
-
 
 # ✅ Root
 @app.get("/")
 def root():
     return {"message": "AI Interviewer Backend Running 🚀"}
 
-
-# 🔥 IMPORTANT: Railway-compatible run
+# 🔥 Railway-compatible run
 if __name__ == "__main__":
     import uvicorn
-
-    port = int(os.getenv("PORT", 8000))  # 🔥 dynamic port
+    port = int(os.getenv("PORT", 8000))
     uvicorn.run("app.main:app", host="0.0.0.0", port=port)
