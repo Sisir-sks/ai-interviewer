@@ -3,41 +3,37 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 
+# ✅ Create app
 app = FastAPI(title="AI Interviewer API", version="0.1.0")
 
+# ✅ CORS (FIXED)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["*"],  # change later to frontend URL
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-from fastapi import Request
 
-@app.options("/{full_path:path}")
-async def preflight_handler(request: Request):
-    return {}
+# ✅ Import AFTER app creation
 from app.api.routes.interview import router as interview_router
 from app.db.database import Base, engine
-from app.models.user import User
+from app.models.user import User  # optional
 
+# ✅ Create tables on startup
 @app.on_event("startup")
 def startup():
     print("📦 Creating database tables...")
     Base.metadata.create_all(bind=engine)
     print("✅ Tables created!")
 
+# ✅ Routes
 app.include_router(interview_router, prefix="/interview")
 
+# ✅ Root
 @app.get("/")
 def root():
     return {"message": "AI Interviewer Backend Running 🚀"}
-
-if __name__ == "__main__":
-    import uvicorn
-    port = int(os.getenv("PORT", 8000))
-    uvicorn.run("app.main:app", host="0.0.0.0", port=port)
