@@ -4,15 +4,9 @@ import StatusSidebar from './components/StatusSidebar';
 import FinalResultsScreen from './components/FinalResultsScreen';
 import UploadScreen from './components/UploadScreen';
 
-let rawApiUrl = import.meta.env.VITE_API_URL || "https://ai-interviewer-production-0d2a.up.railway.app";
-if (!rawApiUrl.startsWith('http')) {
-  if (rawApiUrl.includes('localhost') || rawApiUrl.includes('127.0.0.1')) {
-    rawApiUrl = `http://${rawApiUrl}`;
-  } else {
-    rawApiUrl = `https://${rawApiUrl}`;
-  }
-}
-const API_URL = rawApiUrl.replace(/\/$/, "");
+// 🔥 API URL FIX (clean)
+const API_URL = (import.meta.env.VITE_API_URL || "https://ai-interviewer-ctpj.onrender.com").replace(/\/$/, "");
+
 function App() {
 
   const [view, setView] = useState('upload');
@@ -21,7 +15,15 @@ function App() {
   const [chatHistory, setChatHistory] = useState([]);
   const [difficulty, setDifficulty] = useState('EASY');
 
-  const [sessionId] = useState(() => Date.now().toString());
+  // 🔥 SESSION (persisted)
+  const [sessionId] = useState(() => {
+    const existing = localStorage.getItem("session_id");
+    if (existing) return existing;
+
+    const newId = Date.now().toString();
+    localStorage.setItem("session_id", newId);
+    return newId;
+  });
 
   const chatRef = useRef();
 
@@ -29,9 +31,9 @@ function App() {
     chatRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatHistory]);
 
-  // 🔥 DEBUG (IMPORTANT)
   useEffect(() => {
     console.log("🌐 API URL:", API_URL);
+    console.log("🧠 Session ID:", sessionId);
   }, []);
 
   // 🏁 FINAL SCREEN
@@ -46,7 +48,6 @@ function App() {
 
     try {
       console.log("🚀 Starting Interview...");
-      console.log("Session ID:", sessionId);
 
       const res = await fetch(`${API_URL}/interview/start`, {
         method: 'POST',
@@ -57,10 +58,11 @@ function App() {
         })
       });
 
+      // 🔥 HANDLE RENDER COLD START
       if (!res.ok) {
-        const errText = await res.text();
-        console.error("❌ Backend error:", errText);
-        alert("Backend error");
+        const text = await res.text();
+        console.error("❌ Backend error:", text);
+        alert("Backend waking up... try again in 5 seconds");
         return;
       }
 
@@ -110,8 +112,8 @@ function App() {
       });
 
       if (!res.ok) {
-        const errText = await res.text();
-        console.error("❌ Backend error:", errText);
+        const text = await res.text();
+        console.error("❌ Backend error:", text);
         alert("Error processing answer");
         return;
       }
@@ -177,20 +179,19 @@ function App() {
     );
   }
 
-  // 🎯 MAIN INTERVIEW UI
+  // 🎯 MAIN UI
   return (
     <div className="flex flex-row h-screen w-full bg-gradient-to-br from-black via-slate-900 to-black">
 
       <div className="flex-1 flex flex-col p-6 gap-6">
 
-        {/* HEADER */}
         <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-white">
               🤖 AI Interviewer
             </h1>
             <p className="text-sm text-gray-400">
-              AI-powered adaptive interview based on your resume
+              AI-powered adaptive interview
             </p>
           </div>
 
@@ -199,15 +200,14 @@ function App() {
           </div>
         </div>
 
-        {/* CHAT */}
         <div className="flex-1 overflow-auto p-6 space-y-4">
           {chatHistory.map((msg, i) => (
             <div
               key={i}
-              className={`p-4 rounded-2xl max-w-[65%] shadow-lg ${
+              className={`p-4 rounded-2xl max-w-[65%] ${
                 msg.role === 'user'
-                  ? 'ml-auto bg-green-500/20 border border-green-400/20'
-                  : 'mr-auto bg-blue-500/10 border border-white/10'
+                  ? 'ml-auto bg-green-500/20'
+                  : 'mr-auto bg-blue-500/10'
               }`}
             >
               <div className="text-xs text-gray-400 mb-1">
@@ -219,23 +219,17 @@ function App() {
               </div>
             </div>
           ))}
-
           <div ref={chatRef} />
         </div>
 
-        {/* INPUT */}
-        <div className="p-2 rounded-2xl bg-white/5 border border-white/10">
+        <div className="p-2 rounded-2xl bg-white/5">
           <ControlBar onSend={handleSend} disabled={isLoading} />
         </div>
 
       </div>
 
-      {/* SIDEBAR */}
       <div className="w-72 p-6 bg-black/40">
-        <StatusSidebar
-          difficulty={difficulty}
-          activeAgent="AI Interviewer"
-        />
+        <StatusSidebar difficulty={difficulty} activeAgent="AI Interviewer" />
       </div>
 
     </div>
