@@ -5,8 +5,7 @@ import FinalResultsScreen from './components/FinalResultsScreen';
 import UploadScreen from './components/UploadScreen';
 
 // 🔥 API URL
-const API_URL = import.meta.env.VITE_API_URL;
-
+const API_URL = (import.meta.env.VITE_API_URL || "https://ai-interviewer-production-0d2a.up.railway.app").replace(/\/$/, "");
 function App() {
 
   const [view, setView] = useState('upload');
