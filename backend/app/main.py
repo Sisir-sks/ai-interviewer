@@ -11,7 +11,7 @@ app.add_middleware(
     allow_origins=[
         "https://ai-interviewer-oz7s4ykns-sisirkumar413-5323s-projects.vercel.app",
         "http://localhost:3000",
-        "http://localhost:5173",  # Vite default port
+        "http://localhost:5173",
     ],
     allow_credentials=True,
     allow_methods=["*"],
