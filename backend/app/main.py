@@ -9,11 +9,11 @@ from fastapi.middleware.cors import CORSMiddleware
 # ✅ Create app
 app = FastAPI(title="AI Interviewer API", version="0.1.0")
 
-# ✅ CORS (FIXED)
+# 🔥 FIXED CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # change later to frontend URL
-    allow_credentials=True,
+    allow_origins=["*"],       # allow all
+    allow_credentials=False,   # 🔥 MUST BE FALSE
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -21,9 +21,9 @@ app.add_middleware(
 # ✅ Import AFTER app creation
 from app.api.routes.interview import router as interview_router
 from app.db.database import Base, engine
-from app.models.user import User  # optional
+from app.models.user import User
 
-# ✅ Create tables on startup
+# ✅ Startup
 @app.on_event("startup")
 def startup():
     print("📦 Creating database tables...")
