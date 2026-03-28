@@ -6,7 +6,11 @@ import UploadScreen from './components/UploadScreen';
 
 let rawApiUrl = import.meta.env.VITE_API_URL || "https://ai-interviewer-production-0d2a.up.railway.app";
 if (!rawApiUrl.startsWith('http')) {
-  rawApiUrl = `https://${rawApiUrl}`;
+  if (rawApiUrl.includes('localhost') || rawApiUrl.includes('127.0.0.1')) {
+    rawApiUrl = `http://${rawApiUrl}`;
+  } else {
+    rawApiUrl = `https://${rawApiUrl}`;
+  }
 }
 const API_URL = rawApiUrl.replace(/\/$/, "");
 function App() {
