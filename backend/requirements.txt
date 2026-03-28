@@ -3,6 +3,6 @@ uvicorn[standard]
 sqlalchemy
 passlib[bcrypt]
 python-dotenv
-google-generativeai
+google-genai
 python-jose[cryptography]
 psycopg2-binary
