@@ -13,12 +13,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# ✅ Import AFTER app creation
-from app.api.routes import auth, interview
-from app.db.database import Base, engine
-from app.models import user  # 👈 import module, not just class
+# ✅ DIRECT imports (IMPORTANT FIX)
+from app.api.routes.auth import router as auth_router
+from app.api.routes.interview import router as interview_router
 
-# ✅ Create tables (safe execution)
+from app.db.database import Base, engine
+from app.models import user  # ensure models are registered
+
+# ✅ Create tables
 def create_tables():
     print("📦 Creating database tables...")
     Base.metadata.create_all(bind=engine)
@@ -26,9 +28,9 @@ def create_tables():
 
 create_tables()
 
-# ✅ Routes
-app.include_router(interview.router, prefix="/interview", tags=["Interview"])
-app.include_router(auth.router, prefix="/auth", tags=["Auth"])
+# ✅ Include routers (ONLY ONCE)
+app.include_router(auth_router, prefix="/auth", tags=["Auth"])
+app.include_router(interview_router, prefix="/interview", tags=["Interview"])
 
 # ✅ Root
 @app.get("/")
@@ -36,4 +38,4 @@ def root():
     return {"message": "AI Interviewer Backend Running 🚀"}
 
 
-print("🚀 VERSION 2 DEPLOYED")
+print("🚀 VERSION FINAL DEPLOYED")
