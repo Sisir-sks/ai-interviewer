@@ -1,43 +1,28 @@
 from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel
 from sqlalchemy.orm import Session
-from app.core.security import create_access_token, hash_password, verify_password
-from app.db.database import SessionLocal
-from app.models.user import User
+from pydantic import BaseModel
+
+from app.db.database import get_db
+from app.db import crud
+from app.core.security import create_access_token
 
 router = APIRouter()
 
 
-# 📦 SCHEMA
 class UserAuth(BaseModel):
     username: str
     password: str
 
 
-# 🔌 DB DEPENDENCY
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-
 # 📝 REGISTER
 @router.post("/register")
 def register(data: UserAuth, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.username == data.username).first()
+    existing_user = crud.get_user_by_username(db, data.username)
 
-    if user:
+    if existing_user:
         raise HTTPException(status_code=400, detail="User already exists")
 
-    new_user = User(
-        username=data.username,
-        password=hash_password(data.password)
-    )
-
-    db.add(new_user)
-    db.commit()
+    crud.create_user(db, data.username, data.password)
 
     return {"message": "User registered successfully"}
 
@@ -45,9 +30,9 @@ def register(data: UserAuth, db: Session = Depends(get_db)):
 # 🔐 LOGIN
 @router.post("/login")
 def login(data: UserAuth, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.username == data.username).first()
+    user = crud.authenticate_user(db, data.username, data.password)
 
-    if not user or not verify_password(data.password, user.password):
+    if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
 
     token = create_access_token({"sub": user.username})

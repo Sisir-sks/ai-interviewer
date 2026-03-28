@@ -34,3 +34,6 @@ app.include_router(auth.router, prefix="/auth", tags=["Auth"])
 @app.get("/")
 def root():
     return {"message": "AI Interviewer Backend Running 🚀"}
+
+
+print("🚀 VERSION 2 DEPLOYED")
