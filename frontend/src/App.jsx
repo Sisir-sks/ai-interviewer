@@ -4,8 +4,11 @@ import StatusSidebar from './components/StatusSidebar';
 import FinalResultsScreen from './components/FinalResultsScreen';
 import UploadScreen from './components/UploadScreen';
 
-// 🔥 API URL
-const API_URL = (import.meta.env.VITE_API_URL || "https://ai-interviewer-production-0d2a.up.railway.app").replace(/\/$/, "");
+let rawApiUrl = import.meta.env.VITE_API_URL || "https://ai-interviewer-production-0d2a.up.railway.app";
+if (!rawApiUrl.startsWith('http')) {
+  rawApiUrl = `https://${rawApiUrl}`;
+}
+const API_URL = rawApiUrl.replace(/\/$/, "");
 function App() {
 
   const [view, setView] = useState('upload');
