@@ -12,11 +12,15 @@ app = FastAPI(title="AI Interviewer API", version="0.1.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=False,
+    allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+from fastapi import Request
 
+@app.options("/{full_path:path}")
+async def preflight_handler(request: Request):
+    return {}
 from app.api.routes.interview import router as interview_router
 from app.db.database import Base, engine
 from app.models.user import User
