@@ -3,37 +3,25 @@ import ControlBar from './components/ControlBar';
 import StatusSidebar from './components/StatusSidebar';
 import FinalResultsScreen from './components/FinalResultsScreen';
 import UploadScreen from './components/UploadScreen';
-import Login from './components/Login';
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
 function App() {
 
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [view, setView] = useState('upload');
   const [isFinished, setIsFinished] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [chatHistory, setChatHistory] = useState([]);
   const [difficulty, setDifficulty] = useState('EASY');
 
+  // 🔥 SESSION ID (IMPORTANT)
+  const [sessionId] = useState(() => Date.now().toString());
+
   const chatRef = useRef();
-  const AI_NAME = "AI Interviewer";
 
   useEffect(() => {
     chatRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatHistory]);
-
-  // 🔐 LOGIN
-  if (!isAuthenticated) {
-    return (
-      <Login 
-        onLogin={() => {
-          setIsAuthenticated(true);
-          setView('upload');
-        }} 
-      />
-    );
-  }
 
   // 🏁 FINAL
   if (isFinished) {
@@ -49,11 +37,11 @@ function App() {
       const res = await fetch(`${API_URL}/interview/start`, {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem("token")}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          resume_text: data?.resumeText || 'sample resume'
+          resume_text: data?.resumeText || 'sample resume',
+          session_id: sessionId   // 🔥 added
         })
       });
 
@@ -76,7 +64,7 @@ function App() {
     setIsLoading(false);
   }
 
-  // 💬 SEND
+  // 💬 SEND ANSWER
   async function handleSend(text) {
     if (!text.trim()) return;
 
@@ -92,10 +80,12 @@ function App() {
       const res = await fetch(`${API_URL}/interview/answer`, {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem("token")}`
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ answer: text })
+        body: JSON.stringify({
+          answer: text,
+          session_id: sessionId   // 🔥 added
+        })
       });
 
       const responseData = await res.json();
@@ -129,7 +119,7 @@ function App() {
     window.speechSynthesis.speak(utterance);
   }
 
-  // 🔥 LOADING
+  // 🔥 LOADING SCREEN
   if (isLoading && view !== 'interview') {
     return (
       <div className="h-screen flex items-center justify-center text-white text-lg">
@@ -138,7 +128,7 @@ function App() {
     );
   }
 
-  // 📄 UPLOAD
+  // 📄 UPLOAD SCREEN
   if (view === 'upload') {
     return (
       <div className="h-screen w-full bg-background flex items-center justify-center">
@@ -157,7 +147,7 @@ function App() {
     );
   }
 
-  // 🎯 UI
+  // 🎯 MAIN UI
   return (
     <div className="flex flex-row h-screen w-full bg-gradient-to-br from-black via-slate-900 to-black">
 
@@ -174,20 +164,8 @@ function App() {
             </p>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="text-sm text-gray-400">
-              Difficulty: {difficulty}
-            </div>
-
-            <button
-              onClick={() => {
-                localStorage.clear();
-                window.location.reload();
-              }}
-              className="text-red-400 text-sm"
-            >
-              Logout
-            </button>
+          <div className="text-sm text-gray-400">
+            Difficulty: {difficulty}
           </div>
         </div>
 
@@ -233,7 +211,7 @@ function App() {
       <div className="w-72 p-6 bg-black/40">
         <StatusSidebar
           difficulty={difficulty}
-          activeAgent={AI_NAME}
+          activeAgent="AI Interviewer"
         />
       </div>
 

@@ -2,27 +2,27 @@ from app.services.ai.prompts import SYSTEM_PROMPT
 from app.services.ai.memory import InterviewMemory
 from app.services.ai.evaluator import evaluate_answer
 
-import google.generativeai as genai
+from google import genai
 from app.core.config import GEMINI_API_KEY
 
-genai.configure(api_key=GEMINI_API_KEY)
-model = genai.GenerativeModel("gemini-2.5-flash")
+# ✅ New client
+client = genai.Client(api_key=GEMINI_API_KEY)
 
 
 # 🚀 SAFE LLM CALL
 def call_llm(prompt: str):
     try:
-        response = model.generate_content(prompt, stream=True)
+        response = client.models.generate_content(
+            model="gemini-1.5-flash",
+            contents=prompt
+        )
 
-        full_text = ""
-        for chunk in response:
-            if hasattr(chunk, "text") and chunk.text:
-                full_text += chunk.text
+        text = response.text
 
-        if len(full_text.strip()) < 5:
+        if not text or len(text.strip()) < 5:
             return ""
 
-        return full_text.strip()
+        return text.strip()
 
     except Exception as e:
         print("Gemini Error:", str(e))
@@ -35,11 +35,10 @@ class InterviewAgent:
         self.resume = resume_text
         self.memory = InterviewMemory()
 
-    # 🔒 GET CLEAN QUESTION HISTORY
     def get_previous_questions(self):
         return [item["question"] for item in self.memory.history]
 
-    # 🚀 GENERATE FIRST QUESTION
+    # 🚀 FIRST QUESTION
     def generate_question(self):
         prompt = f"""
         {SYSTEM_PROMPT}
@@ -64,7 +63,6 @@ class InterviewAgent:
 
         question = call_llm(prompt)
 
-        # 🔥 HARD FALLBACK
         if not question or question in self.get_previous_questions():
             question = "Can you explain your most recent project and your role in it?"
 
@@ -100,7 +98,7 @@ class InterviewAgent:
             "difficulty": self.memory.difficulty
         }
 
-    # 🔁 GENERATE FOLLOW-UP
+    # 🔁 FOLLOW-UP
     def generate_followup(self, answer: str):
         previous_questions = self.get_previous_questions()
 
@@ -135,7 +133,6 @@ class InterviewAgent:
 
         result = call_llm(prompt)
 
-        # 🚨 LOOP BREAKER
         if not result or result in previous_questions:
             fallback_questions = [
                 "How would you scale this system for millions of users?",

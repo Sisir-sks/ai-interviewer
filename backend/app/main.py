@@ -1,10 +1,10 @@
-# app/main.py
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+# ✅ Create app
 app = FastAPI(title="AI Interviewer API", version="0.1.0")
 
+# ✅ CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -13,12 +13,12 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Import routers
-from app.api.routes.auth import router as auth_router
+# ✅ Import ONLY interview router
 from app.api.routes.interview import router as interview_router
 
+# ✅ DB setup
 from app.db.database import Base, engine
-from app.models.user import User   # Make sure your User model is imported
+from app.models.user import User  # optional (safe to keep)
 
 def create_tables():
     print("📦 Creating database tables...")
@@ -27,10 +27,10 @@ def create_tables():
 
 create_tables()
 
-# Include routers
-app.include_router(auth_router, prefix="/auth")
+# ✅ Include ONLY interview routes
 app.include_router(interview_router, prefix="/interview")
 
+# ✅ Root
 @app.get("/")
 def root():
     return {"message": "AI Interviewer Backend Running 🚀"}
