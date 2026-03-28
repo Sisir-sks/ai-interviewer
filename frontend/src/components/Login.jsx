@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+const API_URL = import.meta.env.VITE_API_URL;
 
 const Login = ({ onLogin }) => {
   const [isRegister, setIsRegister] = useState(false);
@@ -11,6 +11,8 @@ const Login = ({ onLogin }) => {
     try {
       const endpoint = isRegister ? "register" : "login";
 
+      console.log("API URL:", API_URL); // 🔥 debug
+
       const res = await fetch(`${API_URL}/auth/${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -19,22 +21,32 @@ const Login = ({ onLogin }) => {
 
       const data = await res.json();
 
+      console.log("API RESPONSE:", data); // 🔥 debug
+
+      // ❌ HANDLE BACKEND ERROR
+      if (!res.ok) {
+        alert(data.detail || "Request failed");
+        return;
+      }
+
+      // ✅ REGISTER SUCCESS
       if (isRegister) {
-        alert("User registered! Now login.");
+        alert("Registered successfully! Please login.");
         setIsRegister(false);
         return;
       }
 
+      // ✅ LOGIN SUCCESS
       if (data.access_token) {
         localStorage.setItem('token', data.access_token);
         onLogin();
       } else {
-        alert(data.detail || "Error");
+        alert("Invalid response from server");
       }
 
     } catch (err) {
-      console.error(err);
-      alert("Something went wrong");
+      console.error("ERROR:", err);
+      alert("Backend not reachable or network error");
     }
   };
 
@@ -68,7 +80,6 @@ const Login = ({ onLogin }) => {
           {isRegister ? "Register" : "Login"}
         </button>
 
-        {/* 🔥 SWITCH BUTTON */}
         <p className="text-sm text-center text-gray-400">
           {isRegister ? "Already have an account?" : "Don't have an account?"}
         </p>
