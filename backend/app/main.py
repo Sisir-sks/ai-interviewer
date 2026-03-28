@@ -1,47 +1,48 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 import os
 
-# ✅ Create app
 app = FastAPI(title="AI Interviewer API", version="0.1.0")
 
-# ✅ CORS - Fixed (allow_credentials=True is incompatible with allow_origins=["*"])
+# ✅ Allow ALL vercel previews + production
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://ai-interviewer-ten-alpha.vercel.app",  # ✅ new URL
-        "https://ai-interviewer-oz7s4ykns-sisirkumar413-5323s-projects.vercel.app",
-        "http://localhost:3000",
-        "http://localhost:5173",
-    ],
-    allow_credentials=True,
+    allow_origins=["*"],  # temporary fix
+    allow_credentials=False,  # must be False when using "*"
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# ✅ Handle OPTIONS preflight manually
+@app.options("/{full_path:path}")
+async def preflight_handler(full_path: str, request: Request):
+    return JSONResponse(
+        content={},
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+            "Access-Control-Allow-Headers": "*",
+        }
+    )
+
 # ✅ Import router
 from app.api.routes.interview import router as interview_router
-
-# ✅ DB setup
 from app.db.database import Base, engine
-from app.models.user import User  # optional
+from app.models.user import User
 
-# ✅ Startup event
 @app.on_event("startup")
 def startup():
     print("📦 Creating database tables...")
     Base.metadata.create_all(bind=engine)
     print("✅ Tables created!")
 
-# ✅ Routes
 app.include_router(interview_router, prefix="/interview")
 
-# ✅ Root
 @app.get("/")
 def root():
     return {"message": "AI Interviewer Backend Running 🚀"}
 
-# 🔥 Railway-compatible run
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("PORT", 8000))
